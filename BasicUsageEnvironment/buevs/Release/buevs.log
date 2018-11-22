@@ -1,5 +1,0 @@
-﻿kernel32.lib(KERNEL32.dll) : warning LNK4006: __NULL_IMPORT_DESCRIPTOR 已在 ws2_32.lib(WS2_32.dll) 中定义；已忽略第二个定义
-advapi32.lib(ADVAPI32.dll) : warning LNK4006: __NULL_IMPORT_DESCRIPTOR 已在 ws2_32.lib(WS2_32.dll) 中定义；已忽略第二个定义
-shell32.lib(SHELL32.dll) : warning LNK4006: __NULL_IMPORT_DESCRIPTOR 已在 ws2_32.lib(WS2_32.dll) 中定义；已忽略第二个定义
-winmm.lib(WINMM.dll) : warning LNK4006: __NULL_IMPORT_DESCRIPTOR 已在 ws2_32.lib(WS2_32.dll) 中定义；已忽略第二个定义
-  buevs.vcxproj -> E:\OpenSource\live555\live555vs\Release\buevs.lib
