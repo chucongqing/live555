@@ -1,0 +1,6 @@
+﻿  live555ProxyServer.cpp
+e:\opensource\live555\proxyserver\live555proxyserver.cpp(136): warning C4018: “<”: 有符号/无符号不匹配
+e:\opensource\live555\proxyserver\live555proxyserver.cpp(393): warning C4018: “<”: 有符号/无符号不匹配
+  JsonParase.cpp
+  正在生成代码...
+  proxyServervs.vcxproj -> E:\OpenSource\live555\live555vs\Debug\proxyServervs.exe

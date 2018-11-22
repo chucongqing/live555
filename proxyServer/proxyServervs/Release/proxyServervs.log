@@ -1,0 +1,10 @@
+﻿  live555ProxyServer.cpp
+e:\opensource\live555\proxyserver\live555proxyserver.cpp(136): warning C4018: “<”: 有符号/无符号不匹配
+e:\opensource\live555\proxyserver\live555proxyserver.cpp(393): warning C4018: “<”: 有符号/无符号不匹配
+  JsonParase.cpp
+  正在生成代码
+  1346 of 3469 functions (38.8%) were compiled, the rest were copied from previous compilation.
+    1309 functions were new in current compilation
+    50 functions had inline decision re-evaluated but remain unchanged
+  已完成代码的生成
+  proxyServervs.vcxproj -> E:\OpenSource\live555\live555vs\Release\proxyServervs.exe

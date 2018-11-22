@@ -148,7 +148,7 @@ int GenericMediaServer::setUpOurSocket(UsageEnvironment& env, Port& ourPort) {
     // ALLOW_RTSP_SERVER_PORT_REUSE is for backwards-compatibility #####
     NoReuse dummy(env); // Don't use this socket if there's already a local server using it
 #endif
-    
+	//env << "Server Create New Socket"; 
     ourSocket = setupStreamSocket(env, ourPort, True, True);
     if (ourSocket < 0) break;
     

@@ -2,3 +2,9 @@
 *.lib
 *.exe
 .vs/
+*.pdb
+/Debug/
+/Release/
+*.zip
+*.user
+*.filters

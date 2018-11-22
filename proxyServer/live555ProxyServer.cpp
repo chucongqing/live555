@@ -19,6 +19,14 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 
 #include "liveMedia.hh"
 #include "BasicUsageEnvironment.hh"
+#include <string>
+#include <vector>
+#include <fstream>
+#include "..\include\json.hpp" 
+
+using json = nlohmann::json;
+using namespace std;
+
 
 char const* progName;
 UsageEnvironment* env;
@@ -32,7 +40,7 @@ portNumBits tunnelOverHTTPPortNum = 0;
 portNumBits rtspServerPortNum = 554;
 char* username = NULL;
 char* password = NULL;
-char* ipServer = NULL;
+std::string ipServer;
 char* ipProxy = NULL;
 Boolean proxyREGISTERRequests = False;
 char* usernameForREGISTER = NULL;
@@ -50,16 +58,119 @@ static RTSPServer* createRTSPServer(Port port) {
 
 void usage(int where = 0) {
   *env << "\nUsage: " << progName
-       << " [-v|-V]"
-       << " [-t|-T <http-port>]"
-       << " [-p <rtspServer-port>]"
-       << " [-u <username> <password>]"
-       << " [-R] [-U <usernam-for-REGISTER> <password-for-REGISTER>]"
-       << " <rtsp-url-1> ... <rtsp-url-n>\n where " << where;
+       << " [-c|-C] <config json path>";
   exit(1);
 }
 
+class RTSPConfig {
+public:
+	std::string user;
+	std::string password;
+	std::string proxiedUrl;
+	std::string streamUrl;
+protected:
+	RTSPConfig(json jd);
+public:
+	static RTSPConfig* createNew(json jsondata);
+};
+
+RTSPConfig::RTSPConfig(json jd)
+{
+	std::string rtsp_url = jd[0];
+	proxiedUrl = rtsp_url;
+	string user = jd[1];
+	this->user = user;
+	string password = jd[2];
+	this->password = password;
+	string outUrl = jd[3];
+	this->streamUrl = outUrl;
+}
+
+RTSPConfig* RTSPConfig::createNew(json jsondata)
+{
+	if(jsondata.size() != 4)
+	{
+		*env << "\n Error format in rtsp_urls \n";
+		exit(1);
+	}
+
+	RTSPConfig* cfg = new RTSPConfig(jsondata);
+	
+	return cfg;
+}
+vector<RTSPConfig*> vecConfig;
+
+void ReadConfigJson(std::string j3path)
+{
+	
+	std::ifstream i(j3path);
+	
+	json j3;
+	i >> j3;
+
+	//*env << j3.dump().c_str();
+
+	if(j3.find("log") != j3.end())
+	{
+		verbosityLevel = j3["log"];
+	}
+
+	if(j3.find("port") != j3.end())
+	{
+		rtspServerPortNum = j3["port"];
+		*env << "\nServerPort : " << rtspServerPortNum << "\n";
+	}
+	if(j3.find("serverip") != j3.end())
+	{
+		std::string ip = j3["serverip"];
+		ipServer = ip;
+		*env << "ServerIP : " << ipServer .c_str()<< "\n";
+	}
+	if(j3.find("users") != j3.end())
+	{
+		json users = j3["users"];
+		if(users.size() > 0)
+		{
+			authDB = new UserAuthenticationDatabase;
+
+			for(int i = 0; i< users.size(); i++)
+			{
+				json info = users[i];
+				std::string username = info[0];
+				std::string pwd = info[1];
+				authDB->addUserRecord(username.c_str(), pwd.c_str());
+			}
+		}
+		
+		//authDB->addUserRecord("username1", "password1"); // replace these with real strings
+	}
+	if(j3.find("rtsp_urls") != j3.end())
+	{
+		json rs = j3["rtsp_urls"];
+		if(!rs.is_array())
+		{
+			*env << "Error Json Config Format!";
+			exit(1);
+		}
+
+		int sz = rs.size();
+		
+
+		for(int i =0; i < sz; i++)
+		{
+			auto cfg = RTSPConfig::createNew(rs[i]);
+			vecConfig.push_back(cfg);
+		}
+	}
+	else{
+		usage();
+		exit(1);
+	}
+}
+//extern void TestFunc(int argc, char** argv);
+
 int main(int argc, char** argv) {
+
   // Increase the maximum size of video frames that we can 'proxy' without truncation.
   // (Such frames are unreasonably large; the back-end servers should really not be sending frames this large!)
   OutPacketBuffer::maxSize = 100000; // bytes
@@ -68,12 +179,10 @@ int main(int argc, char** argv) {
   TaskScheduler* scheduler = BasicTaskScheduler::createNew();
   env = BasicUsageEnvironment::createNew(*scheduler);
 
-  *env << "LIVE555 Proxy Server\n"
-       << "\t(LIVE555 Streaming Media library version "
-       << LIVEMEDIA_LIBRARY_VERSION_STRING
-       << "; licensed under the GNU LGPL)\n\n";
-
-  *env << "\n ver 0.0.1 \n";
+  *env << "Df Wise Proxy Server\n"
+       << " Library Version :"
+       << LIVEMEDIA_LIBRARY_VERSION_STRING ;
+  *env << "\n ver 1.0.0 \n";
 
   // Check command-line arguments: optional parameters, then one or more rtsp:// URLs (of streams to be proxied):
   progName = argv[0];
@@ -87,6 +196,15 @@ int main(int argc, char** argv) {
 
     switch (opt[1])
     {
+	case 'C':
+	case 'c':
+	{
+		std::string p(argv[2]);
+		ReadConfigJson(p);
+		++argv;
+		--argc;
+		break;
+	}
     case 'v':
     { // verbose output
       verbosityLevel = 1;
@@ -125,19 +243,22 @@ int main(int argc, char** argv) {
       usage(2);
       break;
     }
+
+	
+	
     case 'i':{
-      int sz = sizeof(opt);
-      // *env << "size:" << sz << "\n" << opt;
-      if(sz == 8)
+      int sz = strlen(opt); 
+      *env << "size:" << sz << "\n" << opt;
+      if(sz == 3)
       {
         switch(opt[2])
         {
           case 'p':
           {
             ipServer = argv[2];
-            ipProxy = argv[3];
-            argv += 2;
-            argc -= 2;
+            //ipProxy = argv[3];
+            argv += 1;
+            argc -= 1;
             
             // *env << "\nip:" << ip <<"\n";
           } break;
@@ -205,17 +326,17 @@ int main(int argc, char** argv) {
     ++argv; --argc;
   }
 
-  if (argc < 2 && !proxyREGISTERRequests){
-    *env << "\nthere must be at least one \"rtsp://\" URL at the end \n"; 
-    usage(9); 
-  } 
+  //if (argc < 2 && !proxyREGISTERRequests){
+  //  *env << "\nthere must be at least one \"rtsp://\" URL at the end \n"; 
+  //  usage(9); 
+  //} 
 
   // Make sure that the remaining arguments appear to be "rtsp://" URLs:
-  int i;
+ /* int i;
   for (i = 1; i < argc; ++i) {
     if (strncmp(argv[i], "rtsp://", 7) != 0) usage(10);
   }
-
+*/
   // Do some additional checking for invalid command-line argument combinations:
   if (authDBForREGISTER != NULL && !proxyREGISTERRequests) {
     *env << "The '-U <username> <password>' option can be used only with -R\n";
@@ -240,8 +361,9 @@ int main(int argc, char** argv) {
   // Create the RTSP server. Try first with the configured port number,
   // and then with the default port number (554) if different,
   // and then with the alternative port number (8554):
+  if(!ipServer.empty())
+	ReceivingInterfaceAddr = inet_addr(ipServer.c_str());
 
-  ReceivingInterfaceAddr = inet_addr(ipProxy);
 
   RTSPServer* rtspServer;
   rtspServer = createRTSPServer(rtspServerPortNum);
@@ -265,34 +387,37 @@ int main(int argc, char** argv) {
     *env << "Failed to create RTSP server: " << env->getResultMsg() << "\n";
     exit(1);
   }
-
+  ReceivingInterfaceAddr = 0x0; //inet_addr(ipServer);
   // Create a proxy for each "rtsp://" URL specified on the command line:
-  for (i = 1; i < argc; ++i) {
-    char const* proxiedStreamURL = argv[i];
+ 
+  for (int i = 0; i <  vecConfig.size(); ++i) {
+    // = argv[i];
 
-    char streamName[60];
-    if (argc == 2) {
-      sprintf(streamName, "%s", "proxyStream"); // there's just one stream; give it this name
-    } else {
-      sprintf(streamName, "proxyStream-%d", i); // there's more than one stream; distinguish them by name
-    }
-
-    ReceivingInterfaceAddr = inet_addr(ipServer);
+    //char streamName[60];
+    //if (argc == 2) {
+    //  sprintf(streamName, "%s", "proxyStream"); // there's just one stream; give it this name
+    //} else {
+    //  sprintf(streamName, "proxyStream-%d", i); // there's more than one stream; distinguish them by name
+    //}
+	RTSPConfig* cfg = vecConfig[i];
+	if(cfg == NULL)
+		continue;
+    char const* proxiedStreamURL = cfg->proxiedUrl.c_str();
+	auto streamUrl = cfg->streamUrl.c_str();
+	auto user = cfg->user.c_str();
+	auto pwd = cfg->password.c_str();
 
     ServerMediaSession* sms
       = ProxyServerMediaSession::createNew(*env, rtspServer,
-					   proxiedStreamURL, streamName,
-					   username, password, tunnelOverHTTPPortNum, verbosityLevel);
+					   proxiedStreamURL, streamUrl,
+					   user, pwd, tunnelOverHTTPPortNum, verbosityLevel);
 
     rtspServer->addServerMediaSession(sms);
 
-    /* generate socket */
-    // struct sockaddr_in localaddr;
-    // localaddr.sin_family = AF_INET;
-    // localaddr.sin_addr.s_addr = inet_addr(ip);
-    
 
     char* proxyStreamURL = rtspServer->rtspURL(sms);
+	//char* proxyStreamURL = new char[100];
+	//sprintf(proxyStreamURL, "rtsp://%s/%s",ipServer.c_str(),streamUrl);
     *env << "RTSP stream, proxying the stream \"" << proxiedStreamURL << "\"\n";
     *env << "\tPlay this stream using the URL: " << proxyStreamURL << "\n";
     delete[] proxyStreamURL;

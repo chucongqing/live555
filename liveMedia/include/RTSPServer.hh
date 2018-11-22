@@ -28,6 +28,13 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include "DigestAuthentication.hh"
 #endif
 
+//class ProxyRTSPServer : public RTSPServer {
+//public:
+//	static RTSPServer* createNew(UsageEnvironment& env, ULONG ip, Port ourPort = 554,
+//		UserAuthenticationDatabase* authDatabase = NULL,
+//		unsigned reclamationSeconds = 65);
+//};
+
 class RTSPServer: public GenericMediaServer 
 {
 public:
