@@ -8,3 +8,6 @@
 *.zip
 *.user
 *.filters
+*.tlog
+*.log
+*.dll

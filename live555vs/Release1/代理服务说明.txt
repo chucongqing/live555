@@ -1,0 +1,49 @@
+总览：
+本软件包含 run.cmd cfg.json proxyServer.exe vc_redist.x86.exe
+
+
+proxyServer 用于代理RTSP视频流。
+服务器只读取后端流一次，并将其分发给连接上来的客户端。
+                                                       	--> [RTSP client1]
+        [back-end RTSP/RTP stream] --> [Proxy Server]   --> [RTSP client2]
+                                                             ...
+                                                        --> [RTSP clientN]
+
+初次使用前：
+双击 vc_redist.x86.exe 安装 vc运行库
+
+使用：
+1.配置 cfg.json 服务器配置文件
+	
+	例子
+		{
+			"serverip":"192.168.1.10",
+			"users":[
+				["admin","admin123"],
+				["user1","123"]
+			],
+			"port":9000,
+			"log":0,
+			"rtsp_urls":[
+				["rtsp://admin:admin123@192.168.1.100:554/h264/ch33/main/av_stream","admin","admin123", "out/stream"]
+				["rtsp://192.168.1.101:554/h264/ch33/main/av_stream","admin","admin123", "stream"]
+			]
+		}
+		
+		serverip： 代理服务器的ip地址，请选择本机ip 输出的rtsp流使用这个ip
+		port: 代理服务器的端口 输出的rtsp流使用这个端口
+		users : 数组 如果输出流不设置用户密码，请将其设置为空数组 "[]"
+		rtsp_urls: 被代理的rtsp流 数组格式有几个需要被代理就填写几个
+			内部数据格式为 ["地址","用户","密码","输出地址"]
+			其中输出地址为 rtsp://[ip]:[port]/[输出地址]
+		log： log 等级  0 关闭 1 2 
+	
+		本例中会将 rtsp://admin:admin123@192.168.1.100:554/h264/ch33/main/av_stream 代理为
+			rtsp://192.168.1.10:9000/out/stream
+			
+		  将 rtsp://192.168.1.101:554/h264/ch33/main/av_stream 代理为
+			rtsp://192.168.1.10:9000/stream
+			
+		输出流使用账号密码 admin:admin123 user:123 都可以连接
+		
+2.双击文件夹中 run.cmd 运行代理服务器

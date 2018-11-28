@@ -376,6 +376,8 @@ void RTSPServer::RTSPClientConnection
 			rtspURL,
 			sdpDescriptionSize,
 			sdpDescription);
+
+		envir() <<"RTSP Server>> \r\n\r\n " << *fResponseBuffer << "\r\n\r\n";
 	} while (0);
 
 	if (session != NULL) {
@@ -1656,12 +1658,6 @@ void RTSPServer::RTSPClientSession
 
 	if (noSubsessionsRemain)
 	{
-		
-		reclaimStreamStates();
-		//fOurServerMediaSession->resetDESCRIBEState();
-		//fOurServerMediaSession->deleteAllSubsessions();
-		//this->closeAllClientSessionsForServerMediaSession(subsession->s)
-		/*((ProxyServerMediaSubsession*)(subsession))->RemoveAllSubSession();*/
 		delete this;
 	}
 		

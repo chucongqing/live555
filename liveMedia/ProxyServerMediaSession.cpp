@@ -673,11 +673,13 @@ void ProxyServerMediaSubsession::closeStreamSource(FramedSource* inputSource) {
 			else {
 				// Normal case: There are no other client still streaming (parts of) this stream.
 				// Send a "PAUSE" for the whole stream.
-				/*proxyRTSPClient->sendPauseCommand(fClientMediaSubsession.parentSession(), NULL, proxyRTSPClient->auth());
-				proxyRTSPClient->fLastCommandWasPLAY = False;*/
-
+				//proxyRTSPClient->sendPauseCommand(fClientMediaSubsession.parentSession(), NULL, proxyRTSPClient->auth());
+				
 				//2018-11-22 08:33:39
 				// just Reset the client!
+				//
+				proxyRTSPClient->sendTeardownCommand(fClientMediaSubsession.parentSession(), NULL, proxyRTSPClient->auth());
+				proxyRTSPClient->fLastCommandWasPLAY = False;
 				proxyRTSPClient->scheduleReset();
 			}
 		}

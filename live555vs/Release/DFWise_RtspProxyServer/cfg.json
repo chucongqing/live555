@@ -1,0 +1,12 @@
+{
+	"serverip":"172.20.47.132",
+	"users":[
+		["admin","admin123"],
+		["user1","123"]
+	],
+	"port":9000,
+	"log":0,
+	"rtsp_urls":[
+		["rtsp://admin:admin123@192.168.1.17:554/h264/ch33/main/av_stream","admin","admin123", "test/stream"]
+	]
+}
