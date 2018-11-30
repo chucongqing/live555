@@ -106,9 +106,11 @@ public:
 					    GenericMediaServer* ourMediaServer, // Note: We can be used by just one server
 					    char const* inputStreamURL, // the "rtsp://" URL of the stream we'll be proxying
 					    char const* streamName = NULL,
-					    char const* username = NULL, char const* password = NULL,
+					    char const* username = NULL,
+						char const* password = NULL,
 					    portNumBits tunnelOverHTTPPortNum = 0,
-					        // for streaming the *proxied* (i.e., back-end) stream
+						int _streammode = 0,
+					   
 					    int verbosityLevel = 0,
 					    int socketNumToServer = -1,
 					    MediaTranscodingTable* transcodingTable = NULL);
@@ -131,13 +133,17 @@ protected:
   ProxyServerMediaSession(UsageEnvironment& env, GenericMediaServer* ourMediaServer,
 			  char const* inputStreamURL, char const* streamName,
 			  char const* username, char const* password,
-			  portNumBits tunnelOverHTTPPortNum, int verbosityLevel,
+			  portNumBits tunnelOverHTTPPortNum,
+			  int _streammode,	  
+		      int verbosityLevel,
 			  int socketNumToServer,
 			  MediaTranscodingTable* transcodingTable,
 			  createNewProxyRTSPClientFunc* ourCreateNewProxyRTSPClientFunc
 			  = defaultCreateNewProxyRTSPClientFunc,
 			  portNumBits initialPortNum = 6970,
-			  Boolean multiplexRTCPWithRTP = False);
+			  Boolean multiplexRTCPWithRTP = False
+			  
+  );
 
   // If you subclass "ProxyRTSPClient", then you will also need to define your own function
   // - with signature "createNewProxyRTSPClientFunc" (see above) - that creates a new object
@@ -169,6 +175,7 @@ private:
   void resetDESCRIBEState(); // undoes what was done by "contineAfterDESCRIBE()"
 
 private:
+  int fStreamMode;
   int fVerbosityLevel;
   class PresentationTimeSessionNormalizer* fPresentationTimeSessionNormalizer;
   createNewProxyRTSPClientFunc* fCreateNewProxyRTSPClientFunc;
@@ -184,7 +191,6 @@ private:
 // presentation times that are suitable for our "RTPSink"s (for the corresponding outgoing streams).
 // (For multi-subsession (i.e., audio+video) sessions, the outgoing streams' presentation times retain the same relative
 //  separation as those of the incoming streams.)
-
 class PresentationTimeSubsessionNormalizer: public FramedFilter {
 public:
   void setRTPSink(RTPSink* rtpSink) { fRTPSink = rtpSink; }

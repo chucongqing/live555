@@ -3,8 +3,8 @@
 *.exe
 .vs/
 *.pdb
-/Debug/
-/Release/
+Debug/
+Release/
 *.zip
 *.user
 *.filters

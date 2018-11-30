@@ -135,19 +135,24 @@ Boolean MediaSession::initializeWithSDP(char const* sdpDescription) {
     char* mediumName = strDupSize(sdpLine); // ensures we have enough space
     char const* protocolName = NULL;
     unsigned payloadFormat;
+
     if ((sscanf(sdpLine, "m=%s %hu RTP/AVP %u",
 		mediumName, &subsession->fClientPortNum, &payloadFormat) == 3 ||
 	 sscanf(sdpLine, "m=%s %hu/%*u RTP/AVP %u",
 		mediumName, &subsession->fClientPortNum, &payloadFormat) == 3)
-	&& payloadFormat <= 127) {
+	&& payloadFormat <= 127) 
+	
+	{
       protocolName = "RTP";
-    } else if ((sscanf(sdpLine, "m=%s %hu UDP %u",
+    } 
+	else if ((sscanf(sdpLine, "m=%s %hu UDP %u",
 		       mediumName, &subsession->fClientPortNum, &payloadFormat) == 3 ||
 		sscanf(sdpLine, "m=%s %hu udp %u",
 		       mediumName, &subsession->fClientPortNum, &payloadFormat) == 3 ||
 		sscanf(sdpLine, "m=%s %hu RAW/RAW/UDP %u",
 		       mediumName, &subsession->fClientPortNum, &payloadFormat) == 3)
-	       && payloadFormat <= 127) {
+	       && payloadFormat <= 127) 
+	{
       // This is a RAW UDP source
       protocolName = "UDP";
     } else {

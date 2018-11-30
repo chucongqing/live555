@@ -34,4 +34,5 @@ char* strDupSize(char const* str);
 char* strDupSize(char const* str, size_t& resultBufSize);
 // An alternative form of "strDupSize()" that also returns the size of the allocated buffer.
 
+char* strCopyToLower(char const* str);
 #endif

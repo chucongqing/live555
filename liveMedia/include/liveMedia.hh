@@ -24,6 +24,15 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #ifndef _LIVEMEDIA_HH
 #define _LIVEMEDIA_HH
 
+
+// Default values of command-line parameters:
+enum StreamMode {
+	StreamMode_All = 0,
+	StreamMode_Video = 1,
+	StreamMode_Audio = 2
+};
+
+
 #include "MPEG1or2AudioRTPSink.hh"
 #include "MP3ADURTPSink.hh"
 #include "MPEG1or2VideoRTPSink.hh"

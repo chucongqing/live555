@@ -33,7 +33,9 @@ UsageEnvironment* env;
 UserAuthenticationDatabase* authDB = NULL;
 UserAuthenticationDatabase* authDBForREGISTER = NULL;
 
-// Default values of command-line parameters:
+
+bool keepalive = true;
+int streammode = StreamMode::StreamMode_All;
 int verbosityLevel = 0;
 Boolean streamRTPOverTCP = False;
 portNumBits tunnelOverHTTPPortNum = 0;
@@ -102,7 +104,7 @@ vector<RTSPConfig*> vecConfig;
 
 void ReadConfigJson(std::string j3path)
 {
-	
+		
 	std::ifstream i(j3path);
 	
 	json j3;
@@ -114,6 +116,17 @@ void ReadConfigJson(std::string j3path)
 	{
 		verbosityLevel = j3["log"];
 	}
+
+	if(j3.find("keepalive") != j3.end())
+	{
+		keepalive = j3["keepalive"];
+	}
+
+	if (j3.find("streammode") != j3.end())
+	{
+		streammode = j3["streammode"];
+	}
+
 
 	if(j3.find("port") != j3.end())
 	{
@@ -141,7 +154,6 @@ void ReadConfigJson(std::string j3path)
 				authDB->addUserRecord(username.c_str(), pwd.c_str());
 			}
 		}
-		
 		//authDB->addUserRecord("username1", "password1"); // replace these with real strings
 	}
 	if(j3.find("rtsp_urls") != j3.end())
@@ -410,10 +422,9 @@ int main(int argc, char** argv) {
     ServerMediaSession* sms
       = ProxyServerMediaSession::createNew(*env, rtspServer,
 					   proxiedStreamURL, streamUrl,
-					   user, pwd, tunnelOverHTTPPortNum, verbosityLevel);
+					   user, pwd, tunnelOverHTTPPortNum, streammode, verbosityLevel);
 
     rtspServer->addServerMediaSession(sms);
-
 
     char* proxyStreamURL = rtspServer->rtspURL(sms);
 	//char* proxyStreamURL = new char[100];

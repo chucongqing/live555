@@ -92,10 +92,17 @@ ProxyServerMediaSession* ProxyServerMediaSession
 ::createNew(UsageEnvironment& env, GenericMediaServer* ourMediaServer,
 	char const* inputStreamURL, char const* streamName,
 	char const* username, char const* password,
-	portNumBits tunnelOverHTTPPortNum, int verbosityLevel, int socketNumToServer,
-	MediaTranscodingTable* transcodingTable) {
+	portNumBits tunnelOverHTTPPortNum, 
+	int _streammode,
+	int verbosityLevel,
+	int socketNumToServer,
+	MediaTranscodingTable* transcodingTable)
+{
 	return new ProxyServerMediaSession(env, ourMediaServer, inputStreamURL, streamName, username, password,
-		tunnelOverHTTPPortNum, verbosityLevel, socketNumToServer,
+		tunnelOverHTTPPortNum,
+		_streammode,
+		verbosityLevel,
+		socketNumToServer,
 		transcodingTable);
 }
 
@@ -104,7 +111,9 @@ ProxyServerMediaSession
 ::ProxyServerMediaSession(UsageEnvironment& env, GenericMediaServer* ourMediaServer,
 	char const* inputStreamURL, char const* streamName,
 	char const* username, char const* password,
-	portNumBits tunnelOverHTTPPortNum, int verbosityLevel,
+	portNumBits tunnelOverHTTPPortNum,
+	int _streammode,
+	int verbosityLevel,
 	int socketNumToServer,
 	MediaTranscodingTable* transcodingTable,
 	createNewProxyRTSPClientFunc* ourCreateNewProxyRTSPClientFunc,
@@ -115,7 +124,9 @@ ProxyServerMediaSession
 	fPresentationTimeSessionNormalizer(new PresentationTimeSessionNormalizer(envir())),
 	fCreateNewProxyRTSPClientFunc(ourCreateNewProxyRTSPClientFunc),
 	fTranscodingTable(transcodingTable),
-	fInitialPortNum(initialPortNum), fMultiplexRTCPWithRTP(multiplexRTCPWithRTP) {
+	fInitialPortNum(initialPortNum), fMultiplexRTCPWithRTP(multiplexRTCPWithRTP),
+	fStreamMode(_streammode)
+{
 
 	// Open a RTSP connection to the input stream, and send a "DESCRIBE" command.
 	// We'll use the SDP description in the response to set ourselves up.
@@ -159,9 +170,45 @@ RTCPInstance* ProxyServerMediaSession
 	return RTCPInstance::createNew(envir(), RTCPgs, totSessionBW, cname, sink, NULL/*we're a server*/);
 }
 
-Boolean ProxyServerMediaSession::allowProxyingForSubsession(MediaSubsession const& /*mss*/) {
+Boolean ProxyServerMediaSession::allowProxyingForSubsession(MediaSubsession const& mss) {
 	// Default implementation
-	return True;
+	bool ret = True;
+	switch (fStreamMode)
+	{
+	case StreamMode::StreamMode_All:{
+		//all
+		ret = True;
+	}break;
+	case StreamMode::StreamMode_Video:{
+		char* strLower = strCopyToLower(mss.mediumName());
+
+		if(strcmp(strLower,"video") == 0){
+			ret =  True;
+		}
+		else{
+			ret = False;
+		}
+
+		delete [] strLower;
+	}break;
+	case StreamMode::StreamMode_Audio:{
+		char* strLower = strCopyToLower(mss.mediumName());
+
+		if (strcmp(strLower, "audio") == 0) {
+			ret = True;
+		}
+		else {
+			ret = False;
+		}
+
+		delete[] strLower;
+
+	}break;
+	default:
+		break;
+	}
+
+	return ret;
 }
 
 void ProxyServerMediaSession::continueAfterDESCRIBE(char const* sdpDescription) {
@@ -413,7 +460,13 @@ void ProxyRTSPClient::continueAfterPLAY(int resultCode) {
 	}
 }
 
+extern bool keepalive;
 void ProxyRTSPClient::scheduleLivenessCommand() {
+	
+	if(!keepalive)
+	{
+		return;
+	}
 	// Delay a random time before sending another 'liveness' command.
 	unsigned delayMax = sessionTimeoutParameter(); // if the server specified a maximum time between 'liveness' probes, then use that
 	if (delayMax == 0) {
@@ -435,7 +488,7 @@ void ProxyRTSPClient::scheduleLivenessCommand() {
 
 void ProxyRTSPClient::sendLivenessCommand(void* clientData) {
 	ProxyRTSPClient* rtspClient = (ProxyRTSPClient*)clientData;
-
+	fprintf(stderr, "%s", "\r\nProxyRTSPClient sending LivenessCommand\r\n");	
 	// Note.  By default, we do not send "GET_PARAMETER" as our 'liveness notification' command, even if the server previously
 	// indicated (in its response to our earlier "OPTIONS" command) that it supported "GET_PARAMETER".  This is because
 	// "GET_PARAMETER" crashes some camera servers (even though they claimed to support "GET_PARAMETER").
@@ -664,6 +717,7 @@ void ProxyServerMediaSubsession::closeStreamSource(FramedSource* inputSource) {
 	if (fHaveSetupStream) {
 		ProxyServerMediaSession* const sms = (ProxyServerMediaSession*)fParentSession;
 		ProxyRTSPClient* const proxyRTSPClient = sms->fProxyRTSPClient;
+		RTSPServer* const rtspServer = (RTSPServer*)sms->fOurMediaServer;
 		if (proxyRTSPClient->fLastCommandWasPLAY) { // so that we send only one "PAUSE"; not one for each subsession
 			if (fParentSession->referenceCount() > 1) {
 				// There are other client(s) still streaming other subsessions of this stream.
@@ -673,14 +727,25 @@ void ProxyServerMediaSubsession::closeStreamSource(FramedSource* inputSource) {
 			else {
 				// Normal case: There are no other client still streaming (parts of) this stream.
 				// Send a "PAUSE" for the whole stream.
-				//proxyRTSPClient->sendPauseCommand(fClientMediaSubsession.parentSession(), NULL, proxyRTSPClient->auth());
-				
+				/*proxyRTSPClient->sendPauseCommand(fClientMediaSubsession.parentSession(), NULL, proxyRTSPClient->auth());
+				proxyRTSPClient->fLastCommandWasPLAY = False;*/
 				//2018-11-22 08:33:39
 				// just Reset the client!
 				//
+				
 				proxyRTSPClient->sendTeardownCommand(fClientMediaSubsession.parentSession(), NULL, proxyRTSPClient->auth());
 				proxyRTSPClient->fLastCommandWasPLAY = False;
+				
 				proxyRTSPClient->scheduleReset();
+				
+				/*	ServerMediaSession* sms_new
+						= ProxyServerMediaSession::createNew(envir(), rtspServer,
+							proxyRTSPClient->url(), sms->streamName(),
+							proxyRTSPClient->fOurAuthenticator->username(), proxyRTSPClient->fOurAuthenticator->password(), 0, verbosityLevel());
+
+					rtspServer->removeServerMediaSession(sms);
+					rtspServer->addServerMediaSession(sms_new);*/
+				
 			}
 		}
 	}

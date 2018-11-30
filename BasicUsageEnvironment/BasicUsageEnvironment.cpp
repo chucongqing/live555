@@ -19,7 +19,9 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 
 #include "BasicUsageEnvironment.hh"
 #include <stdio.h>
-
+#ifdef DEBUG
+#include <fstream>
+#endif
 ////////// BasicUsageEnvironment //////////
 
 #if defined(__WIN32__) || defined(_WIN32)
@@ -37,7 +39,23 @@ BasicUsageEnvironment::BasicUsageEnvironment(TaskScheduler& taskScheduler)
 #endif
 }
 
+#ifdef DEBUG
+char t_str[100];
+std::ofstream _of = std::ofstream("_log.txt");
+void _log(char const* str)
+{
+	_of.write(str,strlen(str));
+	_of.flush();
+}
+#endif
+
 BasicUsageEnvironment::~BasicUsageEnvironment() {
+#ifdef DEBUG
+	if(_of.is_open())
+	{
+		_of.close();
+	}
+#endif
 }
 
 BasicUsageEnvironment*
@@ -53,28 +71,52 @@ int BasicUsageEnvironment::getErrno() const {
 #endif
 }
 
+
 UsageEnvironment& BasicUsageEnvironment::operator<<(char const* str) {
   if (str == NULL) str = "(NULL)"; // sanity check
   fprintf(stderr, "%s", str);
+#ifdef DEBUG
+  _log(str);
+#endif
   return *this;
 }
 
 UsageEnvironment& BasicUsageEnvironment::operator<<(int i) {
   fprintf(stderr, "%d", i);
+  #ifdef DEBUG
+memset(t_str,0,100);
+  sprintf_s(t_str,100,"%d",i);
+  _log(t_str);
+#endif // DEBUG
   return *this;
 }
 
 UsageEnvironment& BasicUsageEnvironment::operator<<(unsigned u) {
   fprintf(stderr, "%u", u);
+ #ifdef DEBUG
+ memset(t_str, 0, 100);
+  sprintf_s(t_str, 100, "%u", u);
+  _log(t_str);
+#endif
   return *this;
 }
 
 UsageEnvironment& BasicUsageEnvironment::operator<<(double d) {
   fprintf(stderr, "%f", d);
+#ifdef DEBUG
+  memset(t_str, 0, 100);
+  sprintf_s(t_str, 100, "%f", d);
+  _log(t_str);
+#endif // DEBUG
   return *this;
 }
 
 UsageEnvironment& BasicUsageEnvironment::operator<<(void* p) {
   fprintf(stderr, "%p", p);
+#ifdef DEBUG
+  memset(t_str, 0, 100);
+  sprintf_s(t_str, 100, "%p", p);
+  _log(t_str);
+#endif // DEBUG
   return *this;
 }

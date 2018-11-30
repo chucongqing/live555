@@ -48,3 +48,31 @@ char* strDupSize(char const* str, size_t& resultBufSize) {
 
   return copy;
 }
+
+int tolower(int c)
+{
+	if ((c >= 'A') && (c <= 'Z'))
+		return c + ('a' - 'A');
+	return c;
+}
+
+int toupper(int c)
+{
+	if ((c >= 'a') && (c <= 'z'))
+		return c + ('A' - 'a');
+	return c;
+}
+
+char* strCopyToLower(char const* str)
+{
+	char* copy = strDup(str);
+	if(copy == NULL) return copy;
+	
+	size_t len = strlen(copy);
+	for(int i = 0; i < len ; i++)
+	{
+		copy[i] = tolower(copy[i]);
+	}
+
+	return copy;
+}
